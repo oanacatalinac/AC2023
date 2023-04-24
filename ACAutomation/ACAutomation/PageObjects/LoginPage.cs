@@ -1,4 +1,5 @@
-﻿using OpenQA.Selenium;
+﻿using ACAutomation.Shared;
+using OpenQA.Selenium;
 
 namespace ACAutomation.PageObjects
 {
@@ -6,31 +7,25 @@ namespace ACAutomation.PageObjects
     {
         private IWebDriver driver;
 
+        public MenuItemControlLoggedOut menuItemControlLoggedOut => new MenuItemControlLoggedOut(driver);
+
         public LoginPage(IWebDriver browser)
         {
             driver = browser;
         }
 
-        private IWebElement EmailInput()
-        {
-            return driver.FindElement(By.Id("email"));
-        }
+        private IWebElement EmailInput => driver.FindElement(By.Id("email"));
 
-        private IWebElement PasswordInput()
-        {
-            return driver.FindElement(By.Name("login[password]"));
-        }
+        private IWebElement PasswordInput => driver.FindElement(By.Name("login[password]"));
 
-        private IWebElement SignInButton()
-        {
-            return driver.FindElement(By.CssSelector("button[name='send']"));
-        }
+
+        private IWebElement SignInButton => driver.FindElement(By.CssSelector("button[name='send']"));
 
         public void SignInTheApplication(string email, string password)
         {
-            EmailInput().SendKeys(email);
-            PasswordInput().SendKeys(password);
-            SignInButton().Click();
+            EmailInput.SendKeys(email);
+            PasswordInput.SendKeys(password);
+            SignInButton.Click();
         }
     }
 }

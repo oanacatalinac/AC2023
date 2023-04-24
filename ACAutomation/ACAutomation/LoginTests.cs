@@ -19,14 +19,12 @@ namespace ACAutomation
             login = new LoginPage(driver);
             driver.Manage().Window.Maximize();
             driver.Navigate().GoToUrl("https://magento.softwaretestingboard.com/");
+            login.menuItemControlLoggedOut.NavigateToLoginPage();
         }
 
         [TestMethod]
         public void Should_LoginUser_When_ValidCredentialsAreUsed()
         {
-            //click sign in button from header
-            driver.FindElement(By.XPath("//div[@class='panel header']//a[contains(text(), 'Sign In')]")).Click();
-
             login.SignInTheApplication("test@email.ro", "Test!123");
 
             // sleep
@@ -42,9 +40,6 @@ namespace ACAutomation
         [TestMethod]
         public void Should_NotLoginUser_When_WrongEmailIsUsed()
         {
-            //click sign in button from header
-            driver.FindElement(By.XPath("//div[@class='panel header']//a[contains(text(), 'Sign In')]")).Click();
-
             login.SignInTheApplication("test@outlook.ro", "Test!123");
 
             // sleep

@@ -56,9 +56,17 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AddToCartTests.cs" />
     <Compile Include="LoginTests.cs" />
+    <Compile Include="PageObjects\HomePage.cs" />
     <Compile Include="PageObjects\LoginPage.cs" />
+    <Compile Include="PageObjects\ShippingAddressPage.cs" />
+    <Compile Include="PageObjects\ShoppingCartPage.cs" />
+    <Compile Include="PageObjects\WatchDetailsPage.cs" />
+    <Compile Include="PageObjects\WatchesPage.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Shared\MenuItemControl.cs" />
+    <Compile Include="Shared\MenuItemControlLoggedOut.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
