@@ -1,7 +1,9 @@
 ﻿using ACAutomation.PageObjects;
+using ACAutomation.PageObjects.InputDataBO;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
+using System.Threading;
 
 namespace ACAutomation
 {
@@ -23,11 +25,29 @@ namespace ACAutomation
         [TestMethod]
         public void Should_AddToCartAndPlaceOrder_When_UserIsNotLoggedIn()
         {
+            var addressData = new ShippingAddressBO
+            {
+                EmailAddress = "email@email.ro",
+                FirstName = "John",
+                LastName = "Doe",
+                StreetAddress = "AC address1",
+                City = "Iasi",
+                State = "Hawaii",
+                ZipCode = "12345",
+                Telephone = "1234567890",
+                ShippingMethods = 1
+            };
+
             var navigatePage= homePage.menuItemControl.NavigateToWatchesPage()
                 .NavigateToFirstWatchProduct()
                 .AddProductToCart()
                 .GoToShoppingCart()
-                .ProceedToCheckoutPage();
+                .ProceedToCheckoutPage()
+                .AddShippingAddress(addressData)
+                .PlaceOrder();
+
+            Thread.Sleep(2000);
+            Assert.AreEqual("Thank you for your purchase!", navigatePage.PageTitle.Text);
         }
 
         [TestCleanup]
