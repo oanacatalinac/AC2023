@@ -94,3 +94,154 @@ Let's take for example the Email input:
 * **name**(this is the attribute)=" login[username]"(this is the value) &rarr; The XPath would be: **//input[@name= 'login[username]']** or css selector &rarr; **input[name= 'login[username]']**
 * **title** (this is the attribute)=’Email’ &rarr; The CSS selector would be: **input[title= 'Email']** or the xpath &rarr; **//input[@title= 'Email']**
 * **class**(this is the attribute)=" input-text "(this is the value) &rarr; The XPath would be: **//input[@class='input-text']** or the css selector &rarr; **input[class='input-text']**
+
+
+### **Session 3 - 10.04.2023 - Locators. TestInitialize. TestCleanup. Page Object Model**
+
+**Scope:** This session scope was to build reliable web element locators and to use MSTest methods to initialize/clean up our test data and to get rid of our duplicate code.
+
+Xpath - Most flexible in order to build reliable web element locators.
+
+Absolute XPath (direct way, select the element from the root node) /
+
+Relative XPath (anywhere at the webpage) //
+
+	//input[@id="email"]
+
+    //*[@name="login[username]"]
+
+    //input[starts-with(@name, 'login')]
+
+    //input[contains(@name, 'login')]
+
+<br>
+
+If we don't find anything unique we can use:
+
+**AND**
+
+    //input[contains(@name, 'login') and @type='email']
+**OR**
+
+    //input[contains(@name, 'login') or @type='email']
+
+
+<br>
+Using Xpath we can also make use of the family of an element:
+
+For example this element **class='field email required '** has a big family:
+
+Following - all following elements of the current node
+
+    //div[@class='field email required']//following::div
+
+Child - all children elements of the current node
+
+    //div[@class='field email required']//child::div
+
+Preceding - all nodes that come before the current node
+
+    //div[@class='field email required']//preceding::fieldset
+
+Following-sibling - following siblings of the context node
+
+    //div[@class='field email required']//following-sibling::label
+
+Parent - parent of the current node
+
+    //div[@class='field email required']//parent::fieldset
+
+Descendant - descendants of the current node
+
+    //div[@class='field email required']//descendant::div
+
+Try to use these elements in order if possible in order to consistently have good tests which will reduce brittleness and increase maintainability.. 
+
+
+<br>
+
+One of a test case component is the prerequisite: conditions that must be met before the test case can be run.
+Our code is testing login scenarios and we need to see what are the prerequisites.
+We have identified the following steps that need to be execute before running the test:
+
+
+```csharp  
+    var driver = new ChromeDriver(); //open chrome browser
+    driver.Manage().Window.Maximize(); //maximize browser window
+    driver.Navigate().GoToUrl("OUR URL"); //access the SUT(System Under Test) url. In our case https://magento.softwaretestingboard.com/
+```
+
+<br>
+
+Also, after the test has finished running, we need to clean up the operations that we made in our test in order to not impact further test. Remember, each test is independent and should not influence the result of other tests. In our test, the clean up would mean to close the browser.
+
+```csharp
+    driver.Quit();
+```
+
+MSTest provides a way to declare methods to be called by the test runner before or after running a test.
+
+```csharp
+    [TestInitialize]
+    public void TestInitialize()
+    {
+    }
+
+    [TestCleanup]
+    public void TestCleanup()
+    {
+    }
+```
+
+The method decorated by [TestInitialize] is called before running each test of the class. The method decorated by [TestCleanup] is called after running each test of the class.
+
+First, we need to remove the init/clean up steps and to move it the according method.
+Then, we have to organize the elements in such way, if the login page layout needs to be changed, also the maintenance of the tests should not be very time consuming.
+
+A better approach to script maintenance is to create a separate class file which would find web elements, fill them or verify them. This class can be reused in all the scripts using that element. In future, if there is a change in the web element, we need to make the change in just 1 class file and not 10 different scripts.
+
+This approach is called Page Object Model (POM). It helps make the code more readable, maintainable, and reusable.
+
+Page Object model is an object design pattern in Selenium, where web pages are represented as classes, and the various elements on the page are defined as variables on the class. All possible user interactions can then be implemented as methods on the class.
+
+Right click on the project > Add > Folder and name it PageObjects
+
+Right click on the PageObjects folder > Add > New Item... > Add a class with name: LoginPage.cs
+
+We need to add the objects that we use in our script in this class: email input, password input, sign in button and create a method to login the user.
+
+Our LoginPge.cs will look like this in the end:
+
+```csharp
+public class LoginPage
+    {
+        private IWebDriver driver;
+
+        public LoginPage(IWebDriver browser)
+        {
+            driver = browser;
+        }
+
+        private IWebElement EmailInput()
+        {
+            return driver.FindElement(By.Id("email"));
+        }
+
+        private IWebElement PasswordInput()
+        {
+            return driver.FindElement(By.Name("login[password]"));
+        }
+
+        private IWebElement SignInButton()
+        {
+            return driver.FindElement(By.CssSelector("button[name='send']"));
+        }
+
+        public void SignInTheApplication(string email, string password)
+        {
+            EmailInput().SendKeys(email);
+            PasswordInput().SendKeys(password);
+            SignInButton().Click();
+        }
+    }
+```
