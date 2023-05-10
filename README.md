@@ -245,9 +245,9 @@ public class LoginPage
         }
     }
 ```
-### **Session 4 - 24.04.2023 - Locators. TestInitialize. TestCleanup. Page Object Model**
+### **Session 4 - 24.04.2023 - MenuItemControl. Adding a product to cart**
 
-**Scope:** This session scope was to change the methods for declaring the elements from LoginPage using LambdaExpression, to handle the page menu and to create new test classes for adding a sending an order without being logged in.
+**Scope:** This session's scope was to change the methods for declaring the elements from LoginPage using LambdaExpression, to handle the page menu and to create new test classes for adding a product to cart without being logged in.
 
 Let's start with the refactoring:
 
@@ -627,8 +627,11 @@ Having the next page object we will be redirected after executing step 8, we can
     }
 
 ```
+### **Session 5 - 08.05.2023 - BusinessObject. Placing an order**
 
-For **Step 9** to be completed, we need to declare all the mandatory fields elements including the Next button:
+**Scope**: This session's scope is to continue with the test we detailed in Session 4.
+
+We will continue with step 9. In order for **Step 9** to be completed, we need to declare all the mandatory fields elements including the Next button:
 
 ```csharp
 
