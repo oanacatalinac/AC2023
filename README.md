@@ -245,3 +245,628 @@ public class LoginPage
         }
     }
 ```
+### **Session 4 - 24.04.2023 - Locators. TestInitialize. TestCleanup. Page Object Model**
+
+**Scope:** This session scope was to change the methods for declaring the elements from LoginPage using LambdaExpression, to handle the page menu and to create new test classes for adding a sending an order without being logged in.
+
+Let's start with the refactoring:
+
+**LoginPage.cs**:
+
+Change the methods for declaring the elements using Lambda expression.
+
+At this point, the changes look like this:
+
+```csharp
+    private IWebElement EmailInput => driver.FindElement(By.Id("email")); 
+
+    private IWebElement PasswordInput => driver.FindElement(By.Name("login[password]")); 
+
+    private IWebElement SignInButton => driver.FindElement(By.CssSelector("button[name='send']")); 
+
+    public void SignInTheApplication(string email, string password)
+    {
+            EmailInput.SendKeys(email);
+            PasswordInput.SendKeys(password);
+            SignInButton.Click();
+    }
+```
+
+Now, we will continue working with the menu. It is present in all the app pages, and we need to create a single base class where the menu elements can be stored. This is a shared component and we need to call it in all of our page objects. The first step is to create a new „Shared” folder and, after that, a class named MenuItemControl.cs. This class will contain all menu elements.
+
+```csharp
+
+     public class MenuItemControl
+     {
+        private IWebDriver driver;
+
+        public MenuItemControl(IWebDriver browser)
+        {
+            driver = browser;
+        }
+     }
+```
+
+The application has 2 contexts, but this menu cannot be used from both perspectives: logged out and logged in. Let's identify the elements used in these contexts:
+
+ 1. logged out: Sign in, Create an Account
+ 2. logged in: Sign out, My Account, My Wish List
+
+For the moment we will create another class that will handle the context when a user is logged in: MenuItemControlLoggedOut that will inherit the MenuItemControlClass.
+
+```csharp
+
+    public class MenuItemControlLoggedOut : MenuItemControl
+    {
+        private IWebDriver driver;
+
+        public MenuItemControlLoggedOut(IWebDriver browser) : base(browser)
+        {
+            driver = browser;
+        }
+
+        public IWebElement BtnSignIn => driver.FindElement(By.XPath("//div[@class='panel header']//a[contains(text(), 'Sign In')]"));
+
+        public LoginPage NavigateToLoginPage()
+        {
+            BtnSignIn.Click();
+
+            return new LoginPage(driver);
+        }
+    }
+
+```
+
+We will continue by making the changes in the LoginPage.cs and LoginTests.cs:
+
+```csharp
+    public class LoginPage
+    {
+        private IWebDriver driver;
+
+        public MenuItemControlLoggedOut menuItemControlLoggedOut => new MenuItemControlLoggedOut(driver);
+
+        public LoginPage(IWebDriver browser)
+        {
+            driver = browser;
+        }
+
+        ....
+    }
+
+```
+
+```csharp
+[TestClass]
+    public class LoginTests
+    {
+        private IWebDriver driver;
+        private LoginPage login;
+
+        [TestInitialize]
+        public void TestInitialize()
+        {
+            driver = new ChromeDriver();
+            login = new LoginPage(driver);
+            driver.Manage().Window.Maximize();
+            driver.Navigate().GoToUrl("https://magento.softwaretestingboard.com/");
+            login.menuItemControlLoggedOut.NavigateToLoginPage();
+        }
+
+        [TestMethod]
+        public void Should_LoginUser_When_ValidCredentialsAreUsed()
+        {
+            login.SignInTheApplication("test@email.ro", "Test!123");
+
+            // sleep
+            Thread.Sleep(2000);
+
+            //assert
+            var expectedResult = "Welcome, Test Firstname Test Lastname!";
+            var actualResult = driver.FindElement(By.XPath("//div[@class='panel header']//li[@class='greet welcome']/span[@class='logged-in']")).Text;
+
+            Assert.AreEqual(expectedResult, actualResult);
+        }
+
+        [TestMethod]
+        public void Should_NotLoginUser_When_WrongEmailIsUsed()
+        {
+            login.SignInTheApplication("test@outlook.ro", "Test!123");
+
+            // sleep
+            Thread.Sleep(2000);
+
+            //assert
+            var expectedResult = "The account sign-in was incorrect or your account is disabled temporarily. Please wait and try again later.";
+            var actualResult = driver.FindElement(By.XPath("//div[@role = 'alert']/div/div")).Text;
+            Assert.AreEqual(expectedResult, actualResult);
+        }
+
+        [TestCleanup]
+        public void TestCleanup()
+        {
+            driver.Quit();
+        }
+```
+
+**Next we will move to the main scope of the session which is to write a test that will add a product to cart and place order while user is not logged in**
+
+In order to do this, we will need to write code for the next steps:
+
+  1. Open the browser
+  2. Maximize the window
+  3. Navigate to the application URL
+  4. Hover over the Watches option from menu and choose Gear option from the displayed list
+  5. Choose the first product from the page (the first watch)
+  6. Add the product to the cart
+  7. Go to the shopping cart
+  8. Choose 'Proceed to checkout'
+  9. Complete the mandatory fields for delivery address
+  10. Place the order 
+  11. Check the message *Thank you for your purchase!* is displayed
+
+
+In order to navigate through all the pages we will consider a base class HomePage.cs that will be the context of the user after he enters in the application:
+
+
+```csharp
+
+    public class HomePage
+    {
+        private IWebDriver driver;
+
+        //reference the menu item control
+        public MenuItemControl menuItemControl => new MenuItemControl(driver);
+
+        public HomePage(IWebDriver browser)
+        {
+            driver = browser;
+        }
+    }
+
+```
+
+After executing **Step 4** user is redirected to a page where all watches are displayed. For this we need to create another page object **WatchesPage.cs**:
+
+```csharp
+
+    public class WatchesPage
+    {
+        private IWebDriver driver;
+
+        public WatchesPage(IWebDriver browser)
+        {
+            driver = browser;
+        }
+    }
+```
+
+Having the previous page object created we can update the MenuItemControl with the necessary elements declaration and method to hover over Gear option menu and click on Watches option from **Step 4**:
+
+```csharp
+
+    public class MenuItemControl
+    {
+        private IWebDriver driver;
+
+        public MenuItemControl(IWebDriver browser)
+        {
+            driver = browser;
+        }
+
+        public IWebElement MenuGearOption => driver.FindElement(By.XPath("//div[@id='store.menu']//span[text()='Gear']"));
+
+        public IWebElement MenuWatchesOption => driver.FindElement(By.XPath("//div[@id='store.menu']//span[text()='Gear']/../following-sibling::ul[@role='menu']//span[text()='Watches']"));
+
+        public WatchesPage NavigateToWatchesPage()
+        {
+            Thread.Sleep(2000);
+            // hover on menu > gear element
+            new Actions(driver).MoveToElement(MenuGearOption).Perform();
+            MenuWatchesOption.Click();
+
+            return new WatchesPage(driver);
+        }
+    }
+
+```
+
+After executing **Step 5** user is redirected to a page where details for the chosen watch are displayed. For this we need to create another page object **WatcheDetailsPage.cs**:
+
+```csharp
+
+    public class WatchDetailsPage
+    {
+        private IWebDriver driver;
+
+        public WatchDetailsPage(IWebDriver browser)
+        {
+            driver = browser;
+        }
+    }
+```
+
+Having the previous page object created we can update the WatchesPage.cs with the necessary elements declaration and method to click on the first watch from the list accordingly with **Step 5**:
+
+```csharp
+
+    public class WatchesPage
+    {
+        private IWebDriver driver;
+
+        public WatchesPage(IWebDriver browser)
+        {
+            driver = browser;
+        }
+
+        public IList<IWebElement> WatchesProductsList => driver.FindElements(By.XPath("//li[contains(@class, 'product-item')]"));
+
+        public WatchDetailsPage NavigateToFirstWatchProduct()
+        {
+            WatchesProductsList.First().Click();
+
+            return new WatchDetailsPage(driver);
+        }
+    }
+
+```
+
+To complete **Step 6** we need to update WatchDetailsPage.cs with the 'Add to cart' button declaration and method to click on the element:
+
+```csharp
+
+    public class WatchDetailsPage
+    {
+        private IWebDriver driver;
+
+        public WatchDetailsPage(IWebDriver browser)
+        {
+            driver = browser;
+        }
+
+        public IWebElement BtnAddToCart => driver.FindElement(By.Id("product-addtocart-button"));
+
+        public WatchDetailsPage AddProductToCart()
+        {
+            BtnAddToCart.Click();
+
+            return this;
+        }
+    }
+
+```
+
+Next, to complete **Step 7** we need to create the page object for the shopping cart page ShoppingCartPage.cs:
+
+```csharp
+
+    public class ShoppingCartPage
+    {
+        private IWebDriver driver;
+
+        public ShoppingCartPage(IWebDriver browser)
+        {
+            driver = browser;
+        }
+    }
+```
+
+Having ShoppingCartPage.cs we can update WatchDetailsPage.cs with the button declaration and method to click on the shopping cart link:
+
+```csharp
+
+    public class WatchDetailsPage
+    {
+        private IWebDriver driver;
+
+        public WatchDetailsPage(IWebDriver browser)
+        {
+            driver = browser;
+        }
+
+        public IWebElement BtnAddToCart => driver.FindElement(By.Id("product-addtocart-button"));
+
+        public WatchDetailsPage AddProductToCart()
+        {
+            BtnAddToCart.Click();
+
+            return this;
+        }
+
+        public IWebElement ShoppingCartLink => driver.FindElement(By.LinkText("shopping cart"));
+
+        public ShoppingCartPage GoToShoppingCart()
+        {
+            Thread.Sleep(2000);
+            ShoppingCartLink.Click();
+
+            return new ShoppingCartPage(driver);
+        }
+    }
+
+```
+
+In order to complete **Step 8** we need to create the page object of the page we will be redirected after clicking on 'Proceed to checkout' button ShippingAddressPage.cs:
+
+```csharp
+
+     public class ShippingAddressPage
+     {
+        private IWebDriver driver;
+
+        public ShippingAddressPage(IWebDriver browser)
+        {
+            driver = browser;
+        }
+
+     }
+
+```
+
+Having the next page object we will be redirected after executing step 8, we can complete ShoppingCartPage.cs with the button declaration and method to click on the 'Proceed to checkout' element:
+
+```csharp
+
+    public class ShoppingCartPage
+    {
+        private IWebDriver driver;
+
+        public ShoppingCartPage(IWebDriver browser)
+        {
+            driver = browser;
+        }
+
+        public IWebElement BtnProceedToCheckout => driver.FindElement(By.XPath("//button[@title='Proceed to Checkout']/span"));
+
+        public ShippingAddressPage ProceedToCheckoutPage()
+        {
+            BtnProceedToCheckout.Click();
+
+            return new ShippingAddressPage(driver);
+        }
+    }
+
+```
+
+For **Step 9** to be completed, we need to declare all the mandatory fields elements including the Next button:
+
+```csharp
+
+    public class ShippingAddressPage
+    {
+        private IWebDriver driver;
+
+        public ShippingAddressPage(IWebDriver browser)
+        {
+            driver = browser;
+        }
+
+        public IWebElement EmailAddressInput => driver.FindElement(By.Id("customer-email"));
+
+        public IWebElement FirstNameInput => driver.FindElement(By.CssSelector("input[name = 'firstname']"));
+
+        public IWebElement LastNameInput => driver.FindElement(By.CssSelector("input[name = 'lastname']"));
+
+        public IWebElement StreetAddressInput => driver.FindElement(By.CssSelector("input[name = 'street[0]']"));
+
+        public IWebElement CityInput => driver.FindElement(By.CssSelector("input[name = 'city']"));
+
+        public IWebElement StateDropdown => driver.FindElement(By.CssSelector("select[name = 'region_id']"));
+
+        public IWebElement ZipCodeInput => driver.FindElement(By.CssSelector("input[name = 'postcode']"));
+
+        public IWebElement TelephoneInput => driver.FindElement(By.CssSelector("input[name = 'telephone']"));
+
+        public IList<IWebElement> ShippingMethodsOptions => driver.FindElements(By.CssSelector("input[type= 'radio']"));
+
+        public IWebElement BtnNext
+            => driver.FindElement(By.CssSelector("button[class= 'button action continue primary']"));
+    }
+
+```
+
+Before clicking on Next button and reaching to the **Step 10** we will create the page object for the 2nd step of placing an order PaymentMethodPage.cs:
+
+```csharp
+
+    public class PaymentMethodPage
+    {
+        private IWebDriver driver;
+
+        public PaymentMethodPage(IWebDriver browser)
+        {
+            driver = browser;
+        }
+    }
+```
+**Parametrize AddShippingAddress method in an efficient way**
+
+To parametrize the details for adding a shipping address in an efficient way, we can create a business object class called ShippingAddressBO.cs which will contain the objects needed in the process of adding a shipping address. We will create this class in a new solution folder named InputDataBO.
+
+```csharp
+
+    public class ShippingAddressBO
+    {
+        public string EmailAddress { get; set; }
+
+        public string FirstName { get; set; }
+
+        public string LastName { get; set; }
+
+        public string StreetAddress { get; set; }
+
+        public string City { get; set; }
+
+        public string State { get; set; }
+
+        public string ZipCode { get; set; }
+
+        public string Telephone { get; set; }
+
+        public int ShippingMethods { get; set; }
+    }
+
+```
+
+After this we can complete ShippingAddressPage.cs with the method that will fill declared elements with data from the business object and with clicking on the Next button:
+
+```csharp
+
+    public class ShippingAddressPage
+    {
+        private IWebDriver driver;
+
+        public ShippingAddressPage(IWebDriver browser)
+        {
+            driver = browser;
+        }
+
+        public IWebElement EmailAddressInput => driver.FindElement(By.Id("customer-email"));
+
+        public IWebElement FirstNameInput => driver.FindElement(By.CssSelector("input[name = 'firstname']"));
+
+        public IWebElement LastNameInput => driver.FindElement(By.CssSelector("input[name = 'lastname']"));
+
+        public IWebElement StreetAddressInput => driver.FindElement(By.CssSelector("input[name = 'street[0]']"));
+
+        public IWebElement CityInput => driver.FindElement(By.CssSelector("input[name = 'city']"));
+
+        public IWebElement StateDropdown => driver.FindElement(By.CssSelector("select[name = 'region_id']"));
+
+        public IWebElement ZipCodeInput => driver.FindElement(By.CssSelector("input[name = 'postcode']"));
+
+        public IWebElement TelephoneInput => driver.FindElement(By.CssSelector("input[name = 'telephone']"));
+
+        public IList<IWebElement> ShippingMethodsOptions => driver.FindElements(By.CssSelector("input[type= 'radio']"));
+
+        public IWebElement BtnNext
+            => driver.FindElement(By.CssSelector("button[class= 'button action continue primary']"));
+
+        public PaymentMethodPage AddShippingAddress(ShippingAddressBO shippingAddress)
+        {
+            Thread.Sleep(5000);
+            EmailAddressInput.SendKeys(shippingAddress.EmailAddress);
+            FirstNameInput.SendKeys(shippingAddress.FirstName);
+            LastNameInput.SendKeys(shippingAddress.LastName);
+            StreetAddressInput.SendKeys(shippingAddress.StreetAddress);
+            CityInput.SendKeys(shippingAddress.City);
+
+            //select from dropdown
+            var selectState = new SelectElement(StateDropdown);
+            selectState.SelectByText(shippingAddress.State);
+
+            ZipCodeInput.SendKeys(shippingAddress.ZipCode);
+            TelephoneInput.SendKeys(shippingAddress.Telephone);
+
+            //select radio button value
+            ShippingMethodsOptions.ElementAt(shippingAddress.ShippingMethods).Click();
+
+            BtnNext.Click();
+
+            return new PaymentMethodPage(driver);
+        }
+    }
+
+```
+
+In order to get to the correct page object specific for **Step 11** we will create PlacedOrderPage.cs:
+
+```csharp
+
+   public class PlacedOrderPage
+    {
+        public IWebDriver driver;
+
+        public PlacedOrderPage(IWebDriver browser)
+        {
+            driver = browser;
+        }
+
+        public IWebElement PageTitle => driver.FindElement(By.XPath("//h1[@class='page-title']/span"));
+    }
+
+```
+
+Now we can fully complete **Step 10** by clicking on the 'Place order' button in PaymentMethodPage.cs:
+
+```csharp
+
+    public class PaymentMethodPage
+    {
+        private IWebDriver driver;
+
+        public PaymentMethodPage(IWebDriver browser)
+        {
+            driver = browser;
+        }
+
+        public IWebElement BtnPlaceOrder => driver.FindElement(By.CssSelector("button[title='Place Order']"));
+
+        public PlacedOrderPage PlaceOrder()
+        {
+            Thread.Sleep(5000);
+            BtnPlaceOrder.Click();
+
+            return new PlacedOrderPage(driver);
+        }
+    }
+```
+
+We completed adding all page objects necessary for the test we want to perform so now we can create AddToCartTests.cs that will call the declared methods for navigating through steps:
+
+```csharp
+
+[TestClass]
+    public class AddToCartTests
+    {
+        private IWebDriver driver;
+        private HomePage homePage;
+
+        [TestInitialize]
+        public void TestInitialize()
+        {
+            driver = new ChromeDriver();
+            homePage = new HomePage(driver);
+            driver.Manage().Window.Maximize();
+            driver.Navigate().GoToUrl("https://magento.softwaretestingboard.com/");
+        }
+
+        [TestMethod]
+        public void Should_AddToCartAndPlaceOrder_When_UserIsNotLoggedIn()
+        {
+            var addressData = new ShippingAddressBO
+            {
+                EmailAddress = "email@email.ro",
+                FirstName = "John",
+                LastName = "Doe",
+                StreetAddress = "AC address1",
+                City = "Iasi",
+                State = "Hawaii",
+                ZipCode = "12345",
+                Telephone = "1234567890",
+                ShippingMethods = 1
+            };
+
+            var navigatePage = homePage.menuItemControl.NavigateToWatchesPage()
+                .NavigateToFirstWatchProduct()
+                .AddProductToCart()
+                .GoToShoppingCart()
+                .ProceedToCheckoutPage()
+                .AddShippingAddress(addressData)
+                .PlaceOrder();
+
+            Thread.Sleep(2000);
+            Assert.AreEqual("Thank you for your purchase!", navigatePage.PageTitle.Text);
+        }
+
+        [TestCleanup]
+        public void TestCleanup()
+        {
+            driver.Quit();
+        }
+    }
+```
+
+As you can observe the business object was instantiated with data in the test using an efficient parametrization.
+
+At the end an assert was added to check the correct message is displayed after placing an order.

@@ -1,7 +1,7 @@
-﻿using ACAutomation.PageObjects;
+﻿using System.Threading;
+using ACAutomation.PageObjects;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Interactions;
-using System.Threading;
 
 namespace ACAutomation.Shared
 {

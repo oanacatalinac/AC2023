@@ -1,9 +1,9 @@
-﻿using ACAutomation.PageObjects;
+﻿using System.Threading;
+using ACAutomation.PageObjects;
 using ACAutomation.PageObjects.InputDataBO;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
-using System.Threading;
 
 namespace ACAutomation
 {
@@ -17,7 +17,7 @@ namespace ACAutomation
         public void TestInitialize()
         {
             driver = new ChromeDriver();
-            homePage=new HomePage(driver);
+            homePage = new HomePage(driver);
             driver.Manage().Window.Maximize();
             driver.Navigate().GoToUrl("https://magento.softwaretestingboard.com/");
         }
@@ -38,7 +38,7 @@ namespace ACAutomation
                 ShippingMethods = 1
             };
 
-            var navigatePage= homePage.menuItemControl.NavigateToWatchesPage()
+            var navigatePage = homePage.menuItemControl.NavigateToWatchesPage()
                 .NavigateToFirstWatchProduct()
                 .AddProductToCart()
                 .GoToShoppingCart()
