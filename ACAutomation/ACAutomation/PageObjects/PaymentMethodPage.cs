@@ -1,4 +1,4 @@
-﻿using System.Threading;
+﻿using ACAutomation.Helpers;
 using OpenQA.Selenium;
 
 namespace ACAutomation.PageObjects
@@ -12,11 +12,16 @@ namespace ACAutomation.PageObjects
             driver = browser;
         }
 
-        public IWebElement BtnPlaceOrder => driver.FindElement(By.CssSelector("button[title='Place Order']"));
+        public By LoaderSelector => By.XPath("//div[@class='loader']");
+
+        public By BtnPlaceOrderSelector => By.CssSelector("button[title='Place Order']");
+
+        public IWebElement BtnPlaceOrder => driver.FindElement(BtnPlaceOrderSelector);
 
         public PlacedOrderPage PlaceOrder()
         {
-            Thread.Sleep(5000);
+            WaitHelpers.WaitForElementToNotBeDisplayed(driver, LoaderSelector);
+            WaitHelpers.WaitForElementToBeClickable(driver, BtnPlaceOrderSelector);
             BtnPlaceOrder.Click();
 
             return new PlacedOrderPage(driver);

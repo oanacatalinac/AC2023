@@ -27,28 +27,23 @@ namespace ACAutomation
         {
             login.SignInTheApplication("test@email.ro", "Test!123");
 
-            // sleep
-            Thread.Sleep(2000);
-
             //assert
-            var expectedResult = "Welcome, Test Firstname Test Lastname!";
-            var actualResult = driver.FindElement(By.XPath("//div[@class='panel header']//li[@class='greet welcome']/span[@class='logged-in']")).Text;
+            var homePage = new HomePage(driver);
+            homePage.menuItemControlLoggedIn.WaitForElement();
 
-            Assert.AreEqual(expectedResult, actualResult);
+            var expectedResult = "Welcome, Test Firstname Test Lastname!";
+            Assert.AreEqual(expectedResult, homePage.menuItemControlLoggedIn.WelcomeUserLabel.Text);
         }
 
         [TestMethod]
         public void Should_NotLoginUser_When_WrongEmailIsUsed()
         {
-            login.SignInTheApplication("test@outlook.ro", "Test!123");
-
-            // sleep
-            Thread.Sleep(2000);
+            login.SignInTheApplication("test4@outlook.ro", "Test!123");
 
             //assert
+            login.WaitForElement();
             var expectedResult = "The account sign-in was incorrect or your account is disabled temporarily. Please wait and try again later.";
-            var actualResult = driver.FindElement(By.XPath("//div[@role = 'alert']/div/div")).Text;
-            Assert.AreEqual(expectedResult, actualResult);
+            Assert.AreEqual(expectedResult, login.FailedLoginLabel.Text);
         }
 
         [TestCleanup]

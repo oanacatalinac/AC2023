@@ -1,4 +1,5 @@
-﻿using ACAutomation.Shared;
+﻿using ACAutomation.Helpers;
+using ACAutomation.Shared;
 using OpenQA.Selenium;
 
 namespace ACAutomation.PageObjects
@@ -26,6 +27,15 @@ namespace ACAutomation.PageObjects
             EmailInput.SendKeys(email);
             PasswordInput.SendKeys(password);
             SignInButton.Click();
+        }
+
+        private By FailedLoginSelector => By.XPath("//div[@role = 'alert']/div/div");
+
+        public IWebElement FailedLoginLabel => driver.FindElement(FailedLoginSelector);
+
+        public void WaitForElement()
+        {
+            WaitHelpers.WaitForElementToBeVisibleCustom(driver, FailedLoginSelector);
         }
     }
 }

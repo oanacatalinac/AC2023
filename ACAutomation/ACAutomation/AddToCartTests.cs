@@ -46,7 +46,7 @@ namespace ACAutomation
                 .AddShippingAddress(addressData)
                 .PlaceOrder();
 
-            Thread.Sleep(2000);
+            navigatePage.WaitForElement();
             Assert.AreEqual("Thank you for your purchase!", navigatePage.PageTitle.Text);
         }
 

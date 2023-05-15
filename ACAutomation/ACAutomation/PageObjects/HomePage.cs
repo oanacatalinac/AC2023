@@ -10,6 +10,8 @@ namespace ACAutomation.PageObjects
         //reference the menu item control
         public MenuItemControl menuItemControl => new MenuItemControl(driver);
 
+        public MenuItemControlLoggedIn menuItemControlLoggedIn => new MenuItemControlLoggedIn(driver);
+
         public HomePage(IWebDriver browser)
         {
             driver = browser;

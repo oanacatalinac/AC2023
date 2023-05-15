@@ -1,4 +1,5 @@
 ﻿using System.Threading;
+using ACAutomation.Helpers;
 using OpenQA.Selenium;
 
 namespace ACAutomation.PageObjects
@@ -21,11 +22,13 @@ namespace ACAutomation.PageObjects
             return this;
         }
 
-        public IWebElement ShoppingCartLink => driver.FindElement(By.LinkText("shopping cart"));
+        public By ShoppingCartSelector => By.LinkText("shopping cart");
+
+        public IWebElement ShoppingCartLink => driver.FindElement(ShoppingCartSelector);
 
         public ShoppingCartPage GoToShoppingCart()
         {
-            Thread.Sleep(2000);
+            WaitHelpers.WaitForElementToBeClickable(driver, ShoppingCartSelector);
             ShoppingCartLink.Click();
 
             return new ShoppingCartPage(driver);

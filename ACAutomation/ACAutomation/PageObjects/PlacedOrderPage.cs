@@ -1,4 +1,5 @@
-﻿using OpenQA.Selenium;
+﻿using ACAutomation.Helpers;
+using OpenQA.Selenium;
 
 namespace ACAutomation.PageObjects
 {
@@ -11,6 +12,13 @@ namespace ACAutomation.PageObjects
             driver = browser;
         }
 
-        public IWebElement PageTitle => driver.FindElement(By.XPath("//h1[@class='page-title']/span"));
+        public By PageTitleSelector => By.XPath("//h1[@class='page-title']/span[.='Thank you for your purchase!']");
+
+        public IWebElement PageTitle => driver.FindElement(PageTitleSelector);
+
+        public void WaitForElement()
+        {
+            WaitHelpers.WaitForElementToBePresent(driver, PageTitleSelector);
+        }
     }
 }
