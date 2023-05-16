@@ -1,5 +1,4 @@
-﻿using System.Threading;
-using ACAutomation.PageObjects;
+﻿using ACAutomation.PageObjects;
 using ACAutomation.PageObjects.InputDataBO;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using OpenQA.Selenium;

@@ -1,5 +1,4 @@
-﻿using System.Threading;
-using ACAutomation.Helpers;
+﻿using ACAutomation.Helpers;
 using OpenQA.Selenium;
 
 namespace ACAutomation.PageObjects

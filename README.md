@@ -873,3 +873,384 @@ We completed adding all page objects necessary for the test we want to perform s
 As you can observe the business object was instantiated with data in the test using an efficient parametrization.
 
 At the end an assert was added to check the correct message is displayed after placing an order.
+
+### **Session 6 - 15.05.2023 - Wait methods**
+
+**Scope**: This session's scope is to add wait methods and replace Thread.Sleep from methods and tests.
+
+*Wait strategy*
+
+There are explicit and implicit waits in Selenium Web Driver. Waiting is having the automated task execution elapse a certain amount of time before continuing with the next step.
+
+You should choose to use Explicit or Implicit Waits.
+
+**• Thread.Sleep**
+
+In particular, this pattern of sleep is an example of explicit waits. So this isn’t actually a feature of Selenium WebDriver, it’s common in most programming languages.
+
+Thread.Sleep() does exactly what you think it does, it sleeps the thread.
+
+Example:
+
+```
+        Thread.Sleep(2000);
+```
+
+Warning! Using Thread.Sleep() can leave to random failures (server is sometimes slow), you don't have full control of the test and the test could take longer than it should. It is a good practice to use other types of waits.
+
+**• Implicit Wait**
+
+WebDriver will poll the DOM for a certain amount of time when trying to find an element or elements if they are not immediately available
+
+Example:
+```
+         driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(1);
+```
+
+**• Explicit Wait** - Wait for a certain condition to occur before proceeding further in the code
+
+In practice, we recommend that you use Web Driver Wait in combination with methods of the Expected Conditions class that reduce the wait. If the element appeared earlier than the time specified during Web Driver wait initialization, Selenium will not wait but will continue the test execution.
+
+Example 1:
+
+``` 
+        var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(2));
+        wait.Until(ExpectedConditions.ElementIsVisible(firstName));
+
+```
+
+Example 2:
+
+```
+        public By ShoppingCartSelector => By.LinkText("shopping cart");
+
+        public IWebElement ShoppingCartLink => driver.FindElement(ShoppingCartSelector);
+
+        public void GoToShoppingCart(IWebDriver browser)
+        {
+            driver = browser;
+            var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(2));
+            wait.Until(ExpectedConditions.ElementIsVisible(FirstName));
+        }
+```
+
+In order to implement explicit waits in our solution we add in a shared folder named Helpers the class WaitHelpers.cs that treats multiple wait conditions:
+
+```
+
+    public static class WaitHelpers
+    {
+        public static void WaitForElementToBeVisible(IWebDriver driver, By by, int timeSpan = 10)
+        {
+            var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(timeSpan));
+            wait.Until(ExpectedConditions.ElementIsVisible(by));
+        }
+
+        public static void WaitForElementToBeClickable(IWebDriver driver, By by, int timeSpan = 20)
+        {
+            var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(timeSpan));
+            wait.Until(ExpectedConditions.ElementToBeClickable(by));
+        }
+
+        public static void WaitForElementToBePresent(IWebDriver driver, By by, int timeSpan=10)
+        {
+            var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(timeSpan));
+            wait.Until(ExpectedConditions.PresenceOfAllElementsLocatedBy(by));
+        }
+
+        public static void WaitForElementToNotBeDisplayed(IWebDriver driver, By by, int timeSpan=20)
+        {
+            var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(timeSpan));
+            wait.Until(ExpectedConditions.InvisibilityOfElementLocated(by));
+        }
+
+        public static void WaitForElementToBeVisibleCustom(IWebDriver driver, By by, int timeSpan=10)
+        {
+            var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(timeSpan));
+            wait.Until(webDriver => webDriver.FindElement(by).Displayed && webDriver.FindElement(by).Enabled);
+        }
+    }
+
+```
+
+We update the selectors in MenuItemControl.cs and use the wait methods specific for the menu elements:
+
+```
+        public By MenuGearSelector => By.XPath("//div[@id='store.menu']//span[text()='Gear']");
+
+        public IWebElement MenuGearOption => driver.FindElement(MenuGearSelector);
+
+        public By MenuWatchesSelector => By.XPath("//div[@id='store.menu']//span[text()='Gear']/../following-sibling::ul[@role='menu']//span[text()='Watches']");
+
+        public IWebElement MenuWatchesOption => driver.FindElement(MenuWatchesSelector);
+
+        public WatchesPage NavigateToWatchesPage()
+        {
+            WaitHelpers.WaitForElementToBeVisible(driver, MenuGearSelector);
+            WaitHelpers.WaitForElementToBePresent(driver, MenuWatchesSelector);
+
+            // hover on menu > gear element
+            new Actions(driver).MoveToElement(MenuGearOption).Perform();
+            MenuWatchesOption.Click();
+
+            return new WatchesPage(driver);
+        }
+```
+
+After this we update selectors and add wait methods in WatchDetailsPage.cs:
+
+```
+
+        public By ShoppingCartSelector => By.LinkText("shopping cart");
+
+        public IWebElement ShoppingCartLink => driver.FindElement(ShoppingCartSelector);
+
+        public ShoppingCartPage GoToShoppingCart()
+        {
+            WaitHelpers.WaitForElementToBeClickable(driver, ShoppingCartSelector);
+            ShoppingCartLink.Click();
+
+            return new ShoppingCartPage(driver);
+        }
+```
+
+We update selectors and add wait methods for ShippingAddressPage.cs:
+
+```
+        public By EmailAddressSelector => By.Id("customer-email");
+
+        public IWebElement EmailAddressInput => driver.FindElement(EmailAddressSelector);
+
+        public By FirstNameInputSelector => By.CssSelector("input[name='firstname']");
+
+        public IWebElement FirstNameInput => driver.FindElement(FirstNameInputSelector);
+
+        public By LastNameInputSelector => By.CssSelector("input[name = 'lastname']");
+
+        public IWebElement LastNameInput => driver.FindElement(LastNameInputSelector);
+
+        public By StreetAddressInputSelector => By.CssSelector("input[name = 'street[0]']");
+
+        public IWebElement StreetAddressInput => driver.FindElement(StreetAddressInputSelector);
+
+        public By CityInputSelector => By.CssSelector("input[name = 'city']");
+
+        public IWebElement CityInput => driver.FindElement(CityInputSelector);
+
+        public By StateDropdownSelector => By.CssSelector("select[name = 'region_id']");
+
+        public IWebElement StateDropdown => driver.FindElement(StateDropdownSelector);
+
+        public By ZipCodeInputSelector => By.CssSelector("input[name = 'postcode']");
+
+        public IWebElement ZipCodeInput => driver.FindElement(ZipCodeInputSelector);
+
+        public By TelephoneInputSelector => By.CssSelector("input[name = 'telephone']");
+
+        public IWebElement TelephoneInput => driver.FindElement(TelephoneInputSelector);
+
+        public By ShippingMethodsOptionsSelector => By.CssSelector("input[type= 'radio']");
+
+        public IList<IWebElement> ShippingMethodsOptions => driver.FindElements(ShippingMethodsOptionsSelector);
+
+        public By BtnNextSelector => By.CssSelector("button[class= 'button action continue primary']");
+
+        public IWebElement BtnNext => driver.FindElement(BtnNextSelector);
+
+        public PaymentMethodPage AddShippingAddress(ShippingAddressBO shippingAddress)
+        {
+            WaitHelpers.WaitForElementToBeClickable(driver, EmailAddressSelector);
+            EmailAddressInput.SendKeys(shippingAddress.EmailAddress);
+
+            WaitHelpers.WaitForElementToBeClickable(driver, FirstNameInputSelector);
+            FirstNameInput.SendKeys(shippingAddress.FirstName);
+
+            WaitHelpers.WaitForElementToBeClickable(driver, LastNameInputSelector);
+            LastNameInput.SendKeys(shippingAddress.LastName);
+
+            WaitHelpers.WaitForElementToBeClickable(driver, StreetAddressInputSelector);
+            StreetAddressInput.SendKeys(shippingAddress.StreetAddress);
+
+            WaitHelpers.WaitForElementToBeClickable(driver, CityInputSelector);
+            CityInput.SendKeys(shippingAddress.City);
+
+            //select from dropdown
+            WaitHelpers.WaitForElementToBeClickable(driver, StateDropdownSelector);
+            var selectState = new SelectElement(StateDropdown);
+            selectState.SelectByText(shippingAddress.State);
+
+            WaitHelpers.WaitForElementToBeClickable(driver, ZipCodeInputSelector);
+            ZipCodeInput.SendKeys(shippingAddress.ZipCode);
+
+            WaitHelpers.WaitForElementToBeClickable(driver, TelephoneInputSelector);
+            TelephoneInput.SendKeys(shippingAddress.Telephone);
+
+            //select radio button value
+            WaitHelpers.WaitForElementToBeClickable(driver, ShippingMethodsOptionsSelector);
+            ShippingMethodsOptions.ElementAt(shippingAddress.ShippingMethods).Click();
+
+            WaitHelpers.WaitForElementToBeClickable(driver, BtnNextSelector);
+            BtnNext.Click();
+
+            return new PaymentMethodPage(driver);
+        }
+```
+
+After this we update the selectors and add wait methods in PaymentMethodPage.cs:
+
+```
+        public By LoaderSelector => By.XPath("//div[@class='loader']");
+
+        public By BtnPlaceOrderSelector => By.CssSelector("button[title='Place Order']");
+
+        public IWebElement BtnPlaceOrder => driver.FindElement(BtnPlaceOrderSelector);
+
+        public PlacedOrderPage PlaceOrder()
+        {
+            WaitHelpers.WaitForElementToNotBeDisplayed(driver, LoaderSelector);
+            WaitHelpers.WaitForElementToBeClickable(driver, BtnPlaceOrderSelector);
+            BtnPlaceOrder.Click();
+
+            return new PlacedOrderPage(driver);
+        }
+```
+
+We update PlacedOrderPage.cs and add wait methods in PlacedOrderPage.cs:
+
+```
+        public By PageTitleSelector => By.XPath("//h1[@class='page-title']/span[.='Thank you for your purchase!']");
+
+        public IWebElement PageTitle => driver.FindElement(PageTitleSelector);
+
+        public void WaitForElement()
+        {
+            WaitHelpers.WaitForElementToBePresent(driver, PageTitleSelector);
+        }
+```
+
+We uppdate the assert section in the AddToCartTests.cs:
+
+```
+        [TestMethod]
+        public void Should_AddToCartAndPlaceOrder_When_UserIsNotLoggedIn()
+        {
+            ...
+
+            navigatePage.WaitForElement();
+            Assert.AreEqual("Thank you for your purchase!", navigatePage.PageTitle.Text);
+        }
+```
+
+We add MenuControlLoggedIn.cs class to contain those specific elements for a logged in user in the Shared folder. We move the initial selector from the first test from LoginTests.cs in this class and use wait methods along with a try catch to handle the StaleElement exception that Selenium throws in specific circumstances.
+
+```
+
+    public class MenuItemControlLoggedIn : MenuItemControl
+    {
+        public IWebDriver driver;
+
+        public MenuItemControlLoggedIn(IWebDriver browser):base(browser)
+        {
+            driver = browser;
+        }
+
+        public By WelcomeUserSelector => By.XPath("//div[@class='panel header']//li[@class='greet welcome']/span[@class='logged-in']");
+
+        public IWebElement WelcomeUserLabel => driver.FindElement(WelcomeUserSelector);
+
+        public void WaitForElement()
+        {
+            try
+            {
+                WaitHelpers.WaitForElementToBeVisibleCustom(driver, WelcomeUserSelector);
+            }
+            catch (StaleElementReferenceException)
+            {
+                WaitHelpers.WaitForElementToBeVisibleCustom(driver, WelcomeUserSelector);
+            }        
+        }
+    }
+
+```
+
+We update HomePage.cs with the reference for MenuControlLoggedIn.cs:
+
+```
+    public class HomePage
+    {
+        private IWebDriver driver;
+
+        //reference the menu item control
+        public MenuItemControl menuItemControl => new MenuItemControl(driver);
+
+        public MenuItemControlLoggedIn menuItemControlLoggedIn => new MenuItemControlLoggedIn(driver);
+
+        public HomePage(IWebDriver browser)
+        {
+            driver = browser;
+        }
+    }
+```
+
+For the selector that was mentioned in the second test from LoginTests.cs we move it in LoginPage.cs and use the right wait method for it:
+
+```
+    public class LoginPage
+    {
+        private By FailedLoginSelector => By.XPath("//div[@role = 'alert']/div/div");
+
+        public IWebElement FailedLoginLabel => driver.FindElement(FailedLoginSelector);
+
+        public void WaitForElement()
+        {
+            WaitHelpers.WaitForElementToBeVisibleCustom(driver, FailedLoginSelector);
+        }
+     }
+```
+
+We refactor the two tests from LoginTests.cs:
+
+```
+        ... 
+
+        [TestMethod]
+        public void Should_LoginUser_When_ValidCredentialsAreUsed()
+        {
+            login.SignInTheApplication("test@email.ro", "Test!123");
+
+            //assert
+            var homePage = new HomePage(driver);
+            homePage.menuItemControlLoggedIn.WaitForElement();
+
+            var expectedResult = "Welcome, Test Firstname Test Lastname!";
+            Assert.AreEqual(expectedResult, homePage.menuItemControlLoggedIn.WelcomeUserLabel.Text);
+        }
+
+        [TestMethod]
+        public void Should_NotLoginUser_When_WrongEmailIsUsed()
+        {
+            login.SignInTheApplication("test4@outlook.ro", "Test!123");
+
+            //assert
+            login.WaitForElement();
+            var expectedResult = "The account sign-in was incorrect or your account is disabled temporarily. Please wait and try again later.";
+            Assert.AreEqual(expectedResult, login.FailedLoginLabel.Text);
+        }
+
+        ...
+```
+
+### **References**
+
+Getting started:
+
+ • https://www.automatetheplanet.com/getting-started-webdriver/
+ • official documentation: https://www.selenium.dev/documentation/en/
+
+Page object model
+
+  • https://www.selenium.dev/documentation/en/guidelines_and_recommendations/page_object_models/
+
+Waits:
+
+  • https://www.toolsqa.com/selenium-webdriver/c-sharp/advance-explicit-webdriver-waits-in-c/
