@@ -471,7 +471,7 @@ Having the previous page object created we can update the MenuItemControl with t
 
 ```
 
-After executing **Step 5** user is redirected to a page where details for the chosen watch are displayed. For this we need to create another page object **WatcheDetailsPage.cs**:
+After executing **Step 5** user is redirected to a page where details for the chosen watch are displayed. For this we need to create another page object **WatchDetailsPage.cs**:
 
 ```csharp
 
@@ -892,7 +892,7 @@ Thread.Sleep() does exactly what you think it does, it sleeps the thread.
 
 Example:
 
-```
+```csharp
         Thread.Sleep(2000);
 ```
 
@@ -903,7 +903,7 @@ Warning! Using Thread.Sleep() can leave to random failures (server is sometimes 
 WebDriver will poll the DOM for a certain amount of time when trying to find an element or elements if they are not immediately available
 
 Example:
-```
+```csharp
          driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(1);
 ```
 
@@ -913,7 +913,7 @@ In practice, we recommend that you use Web Driver Wait in combination with metho
 
 Example 1:
 
-``` 
+```csharp
         var wait = new WebDriverWait(driver, TimeSpan.FromSeconds(2));
         wait.Until(ExpectedConditions.ElementIsVisible(firstName));
 
@@ -921,7 +921,7 @@ Example 1:
 
 Example 2:
 
-```
+```csharp
         public By ShoppingCartSelector => By.LinkText("shopping cart");
 
         public IWebElement ShoppingCartLink => driver.FindElement(ShoppingCartSelector);
@@ -936,7 +936,7 @@ Example 2:
 
 In order to implement explicit waits in our solution we add in a shared folder named Helpers the class WaitHelpers.cs that treats multiple wait conditions:
 
-```
+```csharp
 
     public static class WaitHelpers
     {
@@ -975,7 +975,7 @@ In order to implement explicit waits in our solution we add in a shared folder n
 
 We update the selectors in MenuItemControl.cs and use the wait methods specific for the menu elements:
 
-```
+```csharp
         public By MenuGearSelector => By.XPath("//div[@id='store.menu']//span[text()='Gear']");
 
         public IWebElement MenuGearOption => driver.FindElement(MenuGearSelector);
@@ -997,9 +997,9 @@ We update the selectors in MenuItemControl.cs and use the wait methods specific 
         }
 ```
 
-After this we update selectors and add wait methods in WatchDetailsPage.cs:
+After this we update selectors and use wait methods in WatchDetailsPage.cs:
 
-```
+```csharp
 
         public By ShoppingCartSelector => By.LinkText("shopping cart");
 
@@ -1014,9 +1014,9 @@ After this we update selectors and add wait methods in WatchDetailsPage.cs:
         }
 ```
 
-We update selectors and add wait methods for ShippingAddressPage.cs:
+We update selectors and use wait methods for ShippingAddressPage.cs:
 
-```
+```csharp
         public By EmailAddressSelector => By.Id("customer-email");
 
         public IWebElement EmailAddressInput => driver.FindElement(EmailAddressSelector);
@@ -1096,9 +1096,9 @@ We update selectors and add wait methods for ShippingAddressPage.cs:
         }
 ```
 
-After this we update the selectors and add wait methods in PaymentMethodPage.cs:
+After this we update the selectors and use wait methods in PaymentMethodPage.cs:
 
-```
+```csharp
         public By LoaderSelector => By.XPath("//div[@class='loader']");
 
         public By BtnPlaceOrderSelector => By.CssSelector("button[title='Place Order']");
@@ -1115,9 +1115,9 @@ After this we update the selectors and add wait methods in PaymentMethodPage.cs:
         }
 ```
 
-We update PlacedOrderPage.cs and add wait methods in PlacedOrderPage.cs:
+We update PlacedOrderPage.cs and use wait methods in PlacedOrderPage.cs:
 
-```
+```csharp
         public By PageTitleSelector => By.XPath("//h1[@class='page-title']/span[.='Thank you for your purchase!']");
 
         public IWebElement PageTitle => driver.FindElement(PageTitleSelector);
@@ -1130,7 +1130,7 @@ We update PlacedOrderPage.cs and add wait methods in PlacedOrderPage.cs:
 
 We uppdate the assert section in the AddToCartTests.cs:
 
-```
+```csharp
         [TestMethod]
         public void Should_AddToCartAndPlaceOrder_When_UserIsNotLoggedIn()
         {
@@ -1143,7 +1143,7 @@ We uppdate the assert section in the AddToCartTests.cs:
 
 We add MenuControlLoggedIn.cs class to contain those specific elements for a logged in user in the Shared folder. We move the initial selector from the first test from LoginTests.cs in this class and use wait methods along with a try catch to handle the StaleElement exception that Selenium throws in specific circumstances.
 
-```
+```csharp
 
     public class MenuItemControlLoggedIn : MenuItemControl
     {
@@ -1175,7 +1175,8 @@ We add MenuControlLoggedIn.cs class to contain those specific elements for a log
 
 We update HomePage.cs with the reference for MenuControlLoggedIn.cs:
 
-```
+```csharp
+
     public class HomePage
     {
         private IWebDriver driver;
@@ -1194,7 +1195,8 @@ We update HomePage.cs with the reference for MenuControlLoggedIn.cs:
 
 For the selector that was mentioned in the second test from LoginTests.cs we move it in LoginPage.cs and use the right wait method for it:
 
-```
+```csharp
+
     public class LoginPage
     {
         private By FailedLoginSelector => By.XPath("//div[@role = 'alert']/div/div");
@@ -1210,7 +1212,7 @@ For the selector that was mentioned in the second test from LoginTests.cs we mov
 
 We refactor the two tests from LoginTests.cs:
 
-```
+```csharp
         ... 
 
         [TestMethod]
